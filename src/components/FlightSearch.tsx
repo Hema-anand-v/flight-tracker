@@ -1,17 +1,36 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FlightCard, { FlightData } from './FlightCard';
 
 export default function FlightSearch() {
   const [flightNumber, setFlightNumber] = useState('');
+  const [availableFlights, setAvailableFlights] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fetchingFlights, setFetchingFlights] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [flightData, setFlightData] = useState<FlightData | null>(null);
 
+  useEffect(() => {
+    const fetchFlightNumbers = async () => {
+      try {
+        const response = await fetch('/api/flights');
+        if (!response.ok) throw new Error('Failed to fetch flight list');
+        const data = await response.json();
+        setAvailableFlights(data);
+      } catch (err) {
+        console.error('Error fetching flight numbers:', err);
+      } finally {
+        setFetchingFlights(false);
+      }
+    };
+
+    fetchFlightNumbers();
+  }, []);
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!flightNumber.trim()) return;
+    if (!flightNumber) return;
 
     setLoading(true);
     setError(null);
@@ -36,15 +55,23 @@ export default function FlightSearch() {
   return (
     <div>
       <form onSubmit={handleSearch} className="search-container">
-        <input
-          type="text"
+        <select
           value={flightNumber}
           onChange={(e) => setFlightNumber(e.target.value)}
-          placeholder="Enter flight number (e.g. AA100)"
           className="search-input"
           required
-        />
-        <button type="submit" className="search-button" disabled={loading || !flightNumber.trim()}>
+          disabled={fetchingFlights}
+        >
+          <option value="" disabled>
+            {fetchingFlights ? 'Loading flights...' : 'Select a flight number'}
+          </option>
+          {availableFlights.map((num) => (
+            <option key={num} value={num}>
+              {num}
+            </option>
+          ))}
+        </select>
+        <button type="submit" className="search-button" disabled={loading || !flightNumber}>
           {loading ? 'Searching...' : 'Search Flight'}
         </button>
       </form>

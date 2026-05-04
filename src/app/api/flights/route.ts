@@ -43,7 +43,8 @@ export async function GET(request: Request) {
   await new Promise(resolve => setTimeout(resolve, 800));
 
   if (!flightNumber) {
-    return NextResponse.json({ error: 'Flight number is required' }, { status: 400 });
+    // Return list of all available flight numbers if no specific one is requested
+    return NextResponse.json(mockFlights.map(f => f.flightNumber));
   }
 
   const flight = mockFlights.find(
